@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import './styles/App.css';
 import PostList from './Components/PostList';
 import FormPost from './Components/FormPost';
 import MySelect from './Components/UI/select/MySelect';
 import MyInput from './Components/UI/input/MyInput';
+import PostFilter from './Components/PostFilter';
+import MyModal from './Components/UI/MyModal/MyModal';
+import MyButton from './Components/UI/button/MyButton';
 
 function App() {
     const [posts, setPosts] = useState([
@@ -12,67 +15,55 @@ function App() {
         { id: 3, title: 'dJavascript 3', body: 'c   Description' },
     ]);
 
-    const [selectedSort, setSelectedSort] = useState('');
-    const [sercheQuery, setSerchQuery] = useState('');
+    const [filter, setFilter] = useState({ sort: '', query: '' });
+    const [modal, setModal] = useState(false);
 
-    const opions = [
-        { value: 'title', name: 'По названию' },
-        { value: 'body', name: 'По описанию' },
-    ];
+    const sortedPosts = useMemo(() => {
+        console.log('Функция отработала!');
+
+        if (filter.sort) {
+            return [...posts].sort((a, b) =>
+                a[filter.sort].localeCompare(b[filter.sort])
+            );
+        }
+
+        return posts;
+    }, [filter.sort, posts]);
+
+    const sortedAndSerchedPosts = useMemo(() => {
+        return sortedPosts.filter((post) =>
+            post.title
+                .toLocaleLowerCase()
+                .includes(filter.query.toLocaleLowerCase())
+        );
+    }, [filter.query, sortedPosts]);
 
     const createPost = (newPost) => {
         setPosts([...posts, newPost]);
+        setModal(false);
     };
-
-    function getSortedPosts() {
-        console.log('Функция отработала!');
-        if (selectedSort) {
-            return [...posts].sort((a, b) =>
-                a[selectedSort].localeCompare(b[selectedSort])
-            );
-        }
-        return posts;
-    }
-
-    const sortedPosts = getSortedPosts();
 
     const removePost = (post) => {
         setPosts(posts.filter((p) => p.id !== post.id));
     };
 
-    const sortPosts = (sort) => {
-        setSelectedSort(sort);
-    };
-
     return (
         <div className="App">
-            <FormPost create={createPost} />
-            <hr style={{ margin: '15px 0' }}></hr>
-            <div>
-                <MyInput
-                    value={sercheQuery}
-                    onChange={(e) => setSerchQuery(e.target.value)}
-                    placeholder="Поиск..."
-                />
-                <MySelect
-                    options={opions}
-                    defaultValue={'Выбирите'}
-                    value={selectedSort}
-                    onChange={(sort) => sortPosts(sort)}
-                />
-            </div>
+            <MyButton style={{ marginTop: 30 }} onClick={() => setModal(true)}>
+                Создать пользователя
+            </MyButton>
 
-            {posts.length !== 0 ? (
-                <PostList
-                    remove={removePost}
-                    posts={sortedPosts}
-                    title="Список постов"
-                />
-            ) : (
-                <div>
-                    <h1 style={{ textAlign: 'center' }}>Посты не найдены</h1>
-                </div>
-            )}
+            <MyModal visible={modal} setVisible={setModal}>
+                <FormPost create={createPost} />
+            </MyModal>
+
+            <hr style={{ margin: '15px 0' }}></hr>
+            <PostFilter filter={filter} setFilter={setFilter} />
+            <PostList
+                remove={removePost}
+                posts={sortedAndSerchedPosts}
+                title="Список постов"
+            />
         </div>
     );
 }
