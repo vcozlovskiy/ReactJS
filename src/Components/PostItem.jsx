@@ -1,5 +1,5 @@
 import React from 'react';
-//Add email
+//Add email, add emale global
 const PostItem = (props) => {
     return (
         <div className="post">
